@@ -1,34 +1,48 @@
-key_vals_ch = Channel.from(file("input.csv").text).splitCsv(header: true)
-scratch_dir = "/Users/psaroudakis/nextflow_test/tmp"
+sequences_ch = Channel.from(file(params.input_file).text).splitCsv(header: true)
 
-process printOut {
-  scratch "$scratch_dir"
+process indexCDS {
+  input:
+    path "cds.fa" from file(params.ref_cds)
+  output:
+    path "cds_index" into cds_ch
+
+  script:
+  """
+   module load kallisto
+   kallisto index -i cds_index cds.fa
+  """
+}
+
+process GetnMapSequence {
+  scratch params.scratch_dir
 
   input:
-    val keyVal from key_vals_ch
+    val sequence from sequences_ch
+    path "cds_index" from cds_ch
   output:
-    path "outfile" into outfiles_ch
+    path "${sequence.sra_run_id}.tsv" into abundances_ch
 
   script:
     """
-     echo ${keyVal.KEY.toUpperCase()} > outfile
-     echo ${keyVal.VAL.toUpperCase()} >> outfile
-     touch garbage_file
-     echo '-----'
+     module load kallisto sratoolkit
+     fasterq-dump --split-files ${sequence.sra_run_id}
+     kallisto quant -i cds_index -o ./ ${sequence.sra_run_id}_1.fastq ${sequence.sra_run_id}_2.fastq
+     mv abundance.tsv ${sequence.sra_run_id}.tsv
     """
 
 }
 
 process combineAll {
-  publishDir "work/out/"
+  publishDir "work/out/", mode: 'copy'
 
   input:
-    path "outfile*" from outfiles_ch.collect()
+    path "*" from abundances_ch.collect()
   output:
-    path "combined_out" into combined_ch
+    path "combined_abundance.tsv" into combined_ch
 
+  // @TODO: this needs to be properly combined (e.g. in R or something)
   script:
   """
-  cat outfile* > combined_out
+  cat * > combined_abundance.tsv
   """
 }
