@@ -23,13 +23,22 @@ process GetnMapSequence {
     path "${sequence.sra_run_id}.tsv" into abundances_ch
 
   script:
-    """
-     module load kallisto sratoolkit
-     fasterq-dump --split-files ${sequence.sra_run_id}
-     kallisto quant -i cds_index -o ./ ${sequence.sra_run_id}_1.fastq ${sequence.sra_run_id}_2.fastq
-     mv abundance.tsv ${sequence.sra_run_id}.tsv
-    """
-
+    if (sequence.layout == "paired")
+      """
+       module load kallisto sratoolkit
+       fasterq-dump --split-files ${sequence.sra_run_id}
+       kallisto quant -i cds_index -o ./ ${sequence.sra_run_id}_1.fastq ${sequence.sra_run_id}_2.fastq
+       mv abundance.tsv ${sequence.sra_run_id}.tsv
+      """
+    else if (sequence.layout == "single")
+      """
+       module load kallisto sratoolkit
+       fasterq-dump ${sequence.sra_run_id}
+       kallisto quant -i cds_index -o ./ --single -l ${sequence.fragment_length_average} -s ${sequence.fragment_length_sd} ${sequence.sra_run_id}.fastq
+       mv abundance.tsv ${sequence.sra_run_id}.tsv
+      """
+    else
+      error "Invalid sequence layout: ${sequence.layout}"
 }
 
 process combineAll {
