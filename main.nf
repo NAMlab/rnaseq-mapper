@@ -40,9 +40,25 @@ process combineAll {
   output:
     path "combined_abundance.tsv" into combined_ch
 
-  // @TODO: this needs to be properly combined (e.g. in R or something)
   script:
   """
-  cat * > combined_abundance.tsv
+  #!/usr/bin/env Rscript
+
+  abundance.files = list.files(pattern=("*.tsv"))
+  accession.ids = sub(".tsv", "", abundance.files)
+  combined_df = read.csv(abundance.files[1], sep="\t")
+  names(combined_df) = c("target_id", "length", 
+                         paste0(accession.ids[1], "_eff_length"), 
+                         paste0(accession.ids[1], "_est_counts"), 
+                         paste0(accession.ids[1], "_tpm"))
+  for(i in 2:length(abundance.files)) {
+    additional_df = read.csv(abundance.files[i], sep="\t")
+    names(additional_df) = c("target_id", "length", 
+                             paste0(accession.ids[i], "_eff_length"), 
+                             paste0(accession.ids[i], "_est_counts"), 
+                             paste0(accession.ids[i], "_tpm"))
+    combined_df = merge(combined_df, additional_df, all=T)
+  }
+  write.table(combined_df, "combined_abundance.tsv", row.names=F, sep="\t", quote=F)
   """
 }
