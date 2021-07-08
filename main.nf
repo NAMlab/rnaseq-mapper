@@ -16,6 +16,8 @@ process indexReference {
 process GetnMapSequence {
   publishDir "work/out/fastqc-reports", mode: 'move', pattern: '*_fastqc.zip'
   scratch params.scratch_dir
+  errorStrategy 'retry'
+  maxRetries 4
 
   input:
     val sequence from sequences_ch
