@@ -14,6 +14,7 @@ process indexCDS {
 }
 
 process GetnMapSequence {
+  publishDir "work/out/fastqc-reports", mode: 'move', pattern: '*_fastqc.zip'
   scratch params.scratch_dir
 
   input:
@@ -21,19 +22,22 @@ process GetnMapSequence {
     path "cds_index" from cds_ch
   output:
     path "${sequence.sra_run_id}.tsv" into abundances_ch
+    path "${sequence.sra_run_id}*_fastqc.zip" into fastqc_ch
 
   script:
     if (sequence.layout == "paired")
       """
-       module load kallisto sratoolkit
+       module load kallisto sratoolkit fastqc
        fasterq-dump --split-files ${sequence.sra_run_id}
+       fastqc -t 2 ${sequence.sra_run_id}_1.fastq ${sequence.sra_run_id}_2.fastq
        kallisto quant -i cds_index -o ./ ${sequence.sra_run_id}_1.fastq ${sequence.sra_run_id}_2.fastq
        mv abundance.tsv ${sequence.sra_run_id}.tsv
       """
     else if (sequence.layout == "single")
       """
-       module load kallisto sratoolkit
+       module load kallisto sratoolkit fastqc
        fasterq-dump ${sequence.sra_run_id}
+       fastqc ${sequence.sra_run_id}.fastq
        kallisto quant -i cds_index -o ./ --single -l ${sequence.fragment_length_average} -s ${sequence.fragment_length_sd} ${sequence.sra_run_id}.fastq
        mv abundance.tsv ${sequence.sra_run_id}.tsv
       """
