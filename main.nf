@@ -1,15 +1,15 @@
 sequences_ch = Channel.from(file(params.input_file).text).splitCsv(header: true)
 
-process indexCDS {
+process indexReference {
   input:
-    path "cds.fa" from file(params.ref_cds)
+    path "ref.fa" from file(params.ref_fasta)
   output:
-    path "cds_index" into cds_ch
+    path "ref_index" into reference_ch
 
   script:
   """
    module load kallisto
-   kallisto index -i cds_index cds.fa
+   kallisto index -i ref_index ref.fa
   """
 }
 
@@ -19,7 +19,7 @@ process GetnMapSequence {
 
   input:
     val sequence from sequences_ch
-    path "cds_index" from cds_ch
+    path "ref_index" from reference_ch
   output:
     path "${sequence.sra_run_id}.tsv" into abundances_ch
     path "${sequence.sra_run_id}*_fastqc.zip" into fastqc_ch
@@ -30,7 +30,7 @@ process GetnMapSequence {
        module load kallisto sratoolkit fastqc
        fasterq-dump --split-files ${sequence.sra_run_id}
        fastqc -t 2 ${sequence.sra_run_id}_1.fastq ${sequence.sra_run_id}_2.fastq
-       kallisto quant -i cds_index -o ./ ${sequence.sra_run_id}_1.fastq ${sequence.sra_run_id}_2.fastq
+       kallisto quant -i ref_index -o ./ ${sequence.sra_run_id}_1.fastq ${sequence.sra_run_id}_2.fastq
        mv abundance.tsv ${sequence.sra_run_id}.tsv
       """
     else if (sequence.layout == "single")
@@ -38,7 +38,7 @@ process GetnMapSequence {
        module load kallisto sratoolkit fastqc
        fasterq-dump ${sequence.sra_run_id}
        fastqc ${sequence.sra_run_id}.fastq
-       kallisto quant -i cds_index -o ./ --single -l ${sequence.fragment_length_average} -s ${sequence.fragment_length_sd} ${sequence.sra_run_id}.fastq
+       kallisto quant -i ref_index -o ./ --single -l ${sequence.fragment_length_average} -s ${sequence.fragment_length_sd} ${sequence.sra_run_id}.fastq
        mv abundance.tsv ${sequence.sra_run_id}.tsv
       """
     else
@@ -46,7 +46,7 @@ process GetnMapSequence {
 }
 
 process combineAll {
-  publishDir "work/out/", mode: 'copy'
+  publishDir "work/out/", mode: 'move'
 
   input:
     path "*" from abundances_ch.collect()
