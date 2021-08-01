@@ -55,7 +55,7 @@ process combineAll {
   output:
     path "combined_abundance.tsv" into combined_ch
     
-  module: 'R'
+  module 'R'
 
   script:
   """
