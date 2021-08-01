@@ -54,6 +54,8 @@ process combineAll {
     path "*" from abundances_ch.collect()
   output:
     path "combined_abundance.tsv" into combined_ch
+    
+  module: 'R'
 
   script:
   """
