@@ -1,13 +1,18 @@
 # namlab-mapper
 Convenience script in [Nextflow](https://www.nextflow.io/) to download and map multiple RNA sequences from SRA to the same reference at once using kallisto and combine all the abundance quantifications into one table.
 
+## Prerequisites
+rnaseq-mapper will try to load the following [modules](http://modules.sourceforge.net/): `sratoolkit`, `kallisto`, `R`, `fastqc`.
+If your system doesn't use modules, make sure the execs are available in your PATH.
+I'm currently working on a [Singularity](https://sylabs.io/) container that packages all the required software (see `singularity_container.def`).
+
 ## Usage
 1. Set up nextflow (if not installed already):
 ```
 curl -s https://get.nextflow.io | bash
 ```
-2. Create a file `nextflow.config` by downloading the `example_nextflow.config` from this directory and adapting it to your use case.
-3. Create an input file with the sequences you want to map in the format of the `example_input.csv` provided and make sure it is referred to in your config file.
+2. Create a file `nextflow.config` by using the `example_nextflow.config` from this directory as a template and adapting it to your use case.
+3. Create an input file with the sequences you want to map in the format of `example_input.csv` and make sure it is referred to in your config file.
 4. Run the pipeline:
 ```
 ./nextflow run NAMlab/rnaseq-mapper
