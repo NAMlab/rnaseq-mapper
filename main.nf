@@ -1,4 +1,5 @@
-sequences_ch = Channel.from(file(params.input_file).text).splitCsv(header: true)
+sequences_sra_ch = Channel.from(file(params.input_file).text).splitCsv(header: true)
+sequences_local_paired_ch = Channel.fromFilePairs(params.local_reads_paired)
 
 process indexReference {
   input:
@@ -13,14 +14,14 @@ process indexReference {
   """
 }
 
-process GetnMapSequence {
+process SRA {
   publishDir "work/out/fastqc-reports", mode: 'move', pattern: '*_fastqc.zip'
   scratch params.scratch_dir
   errorStrategy 'retry'
   maxRetries 4
 
   input:
-    val sequence from sequences_ch
+    val sequence from sequences_sra_ch
     path "ref_index" from reference_ch
   output:
     path "${sequence.sra_run_id}.tsv" into abundances_ch
@@ -47,11 +48,33 @@ process GetnMapSequence {
       error "Invalid sequence layout: ${sequence.layout}"
 }
 
+process LocalPaired {
+  publishDir "work/out/fastqc-reports", mode: 'move', pattern: '*_fastqc.zip'
+  scratch params.scratch_dir
+
+  input:
+    set pair_id, file(reads) from sequences_local_paired_ch
+    path "ref_index" from reference_ch
+  output:
+    path "${pair_id}.tsv" into abundances_local_paired_ch
+    path "${pair_id}*_fastqc.zip" into fastqc_local_paired_ch
+
+  script:
+    """
+     module load kallisto sratoolkit fastqc
+     gunzip -c ${reads[0]} > ${pair_id}_1.fastq
+     gunzip -c ${reads[1]} > ${pair_id}_2.fastq
+     fastqc -t 2 ${pair_id}_1.fastq ${pair_id}_2.fastq
+     kallisto quant -i ref_index -o ./ ${pair_id}_1.fastq ${pair_id}_2.fastq
+     mv abundance.tsv ${pair_id}.tsv
+    """
+}
+
 process combineAll {
   publishDir "work/out/", mode: 'move'
 
   input:
-    path "*" from abundances_ch.collect()
+    path "*" from abundances_ch.mix(abundances_local_paired_ch).collect()
   output:
     path "combined_abundance.tsv" into combined_ch
     
