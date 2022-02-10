@@ -1,5 +1,7 @@
 sequences_sra_ch = Channel.from(file(params.input_file).text).splitCsv(header: true)
+// @TODO: If path string empty, create empty channel
 sequences_local_paired_ch = Channel.fromFilePairs(params.local_reads_paired)
+sequences_local_single_ch = Channel.fromPath(params.local_reads_single)
 
 process indexReference {
   input:
@@ -70,11 +72,33 @@ process LocalPaired {
     """
 }
 
+process LocalSingle {
+  publishDir "work/out/fastqc-reports", mode: 'move', pattern: '*_fastqc.zip'
+  scratch params.scratch_dir
+
+  input:
+    path fastq_file from sequences_local_single_ch
+    path "ref_index" from reference_ch
+
+  output:
+    path "${fastq_file.simpleName}.tsv" into abundances_local_single_ch
+    path "${fastq_file.simpleName}*_fastqc.zip" into fastqc_local_single_ch
+
+  script:
+    """
+     module load kallisto sratoolkit fastqc
+     gunzip -c ${fastq_file} > ${fastq_file.simpleName}.fastq
+     fastqc ${fastq_file.simpleName}.fastq
+     kallisto quant -i ref_index -o ./ --single -l ${params.local_reads_single_fraglength_mean} -s ${params.local_reads_single_fraglength_sd} ${fastq_file.simpleName}.fastq
+     mv abundance.tsv ${fastq_file.simpleName}.tsv
+    """
+}
+
 process combineAll {
   publishDir "work/out/", mode: 'move'
 
   input:
-    path "*" from abundances_ch.mix(abundances_local_paired_ch).collect()
+    path "*" from abundances_ch.mix(abundances_local_paired_ch).mix(abundances_local_single_ch).collect()
   output:
     path "combined_abundance.tsv" into combined_ch
     
