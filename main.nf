@@ -1,13 +1,8 @@
-sequences_sra_ch = Channel.from(file(params.input_file).text).splitCsv(header: true)
-// @TODO: If path string empty, create empty channel
-sequences_local_paired_ch = Channel.fromFilePairs(params.local_reads_paired)
-sequences_local_single_ch = Channel.fromPath(params.local_reads_single)
-
 process indexReference {
   input:
-    path "ref.fa" from file(params.ref_fasta)
+    path "ref.fa"
   output:
-    path "ref_index" into reference_ch
+    path "ref_index" 
 
   script:
   """
@@ -21,13 +16,14 @@ process SRA {
   scratch params.scratch_dir
   errorStrategy 'retry'
   maxRetries 4
+  maxForks params.max_sra_forks
 
   input:
-    val sequence from sequences_sra_ch
-    path "ref_index" from reference_ch
+    val sequence 
+    path "ref_index" 
   output:
-    path "${sequence.sra_run_id}.tsv" into abundances_ch
-    path "${sequence.sra_run_id}*_fastqc.zip" into fastqc_ch
+    path "${sequence.sra_run_id}.tsv" 
+    path "${sequence.sra_run_id}*_fastqc.zip"
 
   script:
     if (sequence.layout == "paired")
@@ -55,11 +51,11 @@ process LocalPaired {
   scratch params.scratch_dir
 
   input:
-    set pair_id, file(reads) from sequences_local_paired_ch
-    path "ref_index" from reference_ch
+    tuple val(pair_id), path(reads)
+    path "ref_index"
   output:
-    path "${pair_id}.tsv" into abundances_local_paired_ch
-    path "${pair_id}*_fastqc.zip" into fastqc_local_paired_ch
+    path "${pair_id}.tsv" 
+    path "${pair_id}*_fastqc.zip" 
 
   script:
     """
@@ -77,12 +73,12 @@ process LocalSingle {
   scratch params.scratch_dir
 
   input:
-    path fastq_file from sequences_local_single_ch
-    path "ref_index" from reference_ch
+    path fastq_file 
+    path "ref_index"
 
   output:
-    path "${fastq_file.simpleName}.tsv" into abundances_local_single_ch
-    path "${fastq_file.simpleName}*_fastqc.zip" into fastqc_local_single_ch
+    path "${fastq_file.simpleName}.tsv"
+    path "${fastq_file.simpleName}*_fastqc.zip" 
 
   script:
     """
@@ -98,11 +94,11 @@ process combineAll {
   publishDir "work/out/", mode: 'move'
 
   input:
-    path "*" from abundances_ch.mix(abundances_local_paired_ch).mix(abundances_local_single_ch).collect()
+    path "*" 
   output:
-    path "combined_abundance.tsv" into combined_ch
+    path "combined_abundance.tsv"
     
-  module 'R'
+  module 'R/4.3.2'
 
   script:
   """
@@ -125,4 +121,15 @@ process combineAll {
   }
   write.table(combined_df, "combined_abundance.tsv", row.names=F, sep="\t", quote=F)
   """
+}
+
+workflow {
+  sequences_local_single_ch = Channel.fromPath(params.local_reads_single)
+  sequences_local_paired_ch = Channel.fromFilePairs(params.local_reads_paired)
+  sequences_sra_ch = Channel.from(file(params.input_file).text).splitCsv(header: true)
+  ref_index = indexReference(params.ref_fasta)
+  (abundances_sra, fastq_sra) = SRA(sequences_sra_ch, ref_index)
+  (abundances_single, fastq_single) = LocalSingle(sequences_local_single_ch, ref_index)
+  (abundances_paired, fastq_paired) = LocalPaired(sequences_local_paired_ch, ref_index)
+  combineAll(abundances_single.mix(abundances_paired, abundances_sra).collect())
 }
