@@ -11,7 +11,7 @@ I'm currently working on a [Singularity](https://sylabs.io/) container that pack
 ```
 curl -s https://get.nextflow.io | bash
 ```
-2. Create a file `nextflow.config` by using the `example_nextflow.config` from this directory as a template and adapting it to your use case.
+2. Create a file called `nextflow.config` (exactly this name) by using the `example_nextflow.config` from this directory as a template and adapting it to your use case.
 3. Create an input file with the sequences you want to map in the format of `example_input.csv` and make sure it is referred to in your config file.
 4. Run the pipeline:
 ```
