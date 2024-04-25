@@ -1,5 +1,8 @@
 # namlab-mapper
-Convenience script in [Nextflow](https://www.nextflow.io/) to download and map multiple RNA sequences from SRA to the same reference at once using kallisto and combine all the abundance quantifications into one table.
+Little workflow which can download and map multiple RNA sequencing files from the [NCBI SRA](https://www.ncbi.nlm.nih.gov/sra) as well as any local FASTQ files to a common reference using kallisto. 
+Because it is written in [Nextflow](https://www.nextflow.io/), it can automatically parallelize steps across CPUs or nodes, if you are running it on a cluster (see [this page](https://www.nextflow.io/docs/latest/executor.html) for more details).
+It is also built to be economical with disk space by removing large intermediary files when they are no longer needed.
+The output is a combined table containing abundance quantifications as well as [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) reports for each of sequence files.
 
 ## Prerequisites
 rnaseq-mapper will try to load the following [modules](http://modules.sourceforge.net/): `sratoolkit`, `kallisto`, `R`, `fastqc`.
@@ -13,13 +16,14 @@ curl -s https://get.nextflow.io | bash
 ```
 2. Create a file called `nextflow.config` (exactly this name) by using the `example_nextflow.config` from this directory as a template and adapting it to your use case.
 3. Create an input file with the sequences you want to map in the format of `example_input.csv` and make sure it is referred to in your config file.
-4. Run the pipeline:
+4. If desired, place any FASTQ files in the directories referenced in your `nextflow.config` (if you don't have any, make sure the folders still exist and just leave them empty).
+5. Run the pipeline:
 ```
 ./nextflow run NAMlab/rnaseq-mapper
 ```
 
 ## Output
-You will get out a TSV file with the combined kallisto outputs for all your sequences like this one:
+You will get out a TSV file with the combined kallisto outputs for all your sequence files like this one (by default in the `work/out` folder):
 
 | target_id | length | SRR1805735_eff_length | SRR1805735_est_counts | SRR1805735_tpm | SRR1805737_eff_length | SRR1805737_est_counts | SRR1805737_tpm | SRR6512869_eff_length | SRR6512869_est_counts | SRR6512869_tpm |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -33,4 +37,4 @@ You will get out a TSV file with the combined kallisto outputs for all your sequ
 | Solyc00g007225.2.1 | 1275 | 1116    | 0 | 0 | 1103.76 | 0 | 0 | 1076    | 0 | 0 | 
 | Solyc00g007330.1.1 | 516  | 356.999 | 0 | 0 | 345.082 | 0 | 0 | 317     | 0 | 0 | 
 
-You will also get [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) reports for each of the downloaded sequences.
+You will also get [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) reports for each of sequence files in the same folder.
