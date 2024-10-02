@@ -22,9 +22,17 @@ curl -s https://get.nextflow.io | bash
 ```
 
 ### Singularity Container
-If you prefer, you can also make use of the [Singularity](https://sylabs.io/) container that packages all the required software.
+If you prefer, you can also make use of the [Singularity](https://sylabs.io/) container that packages all the required software (`sratoolkit`, `kallisto`, `R`, `fastqc`).
 This requires Singularity or [Apptainer](https://apptainer.org/) to be installed in your system.
-You can then simply execute the pipeline (step 5 above, the other steps stay the same) via `./nextflow run NAMlab/rnaseq-mapper -with-singularity library://merlin/default/rnaseq-mapper:latest` or `./nextflow run NAMlab/rnaseq-mapper -with-apptainer library://merlin/default/rnaseq-mapper:latest` respectively.
+You can then simply execute the pipeline (step 5 above, the other steps stay the same) via 
+```
+./nextflow run NAMlab/rnaseq-mapper -with-singularity library://merlin/default/rnaseq-mapper:latest
+```
+or 
+```
+./nextflow run NAMlab/rnaseq-mapper -with-apptainer library://merlin/default/rnaseq-mapper:latest
+```
+respectively.
 
 ## Output
 You will get out a TSV file with the combined kallisto outputs for all your sequence files like this one (by default in the `work/out` folder):
