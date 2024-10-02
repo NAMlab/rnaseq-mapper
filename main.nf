@@ -1,4 +1,5 @@
 process indexReference {
+  module 'kallisto'
   input:
     path "ref.fa"
   output:
@@ -6,7 +7,6 @@ process indexReference {
 
   script:
   """
-   module load kallisto
    kallisto index -i ref_index ref.fa
   """
 }
@@ -17,6 +17,9 @@ process SRA {
   errorStrategy 'retry'
   maxRetries 4
   maxForks params.max_sra_forks
+  module 'kallisto'
+  module 'sratoolkit'
+  module 'fastqc'
 
   input:
     val sequence 
@@ -28,7 +31,6 @@ process SRA {
   script:
     if (sequence.layout == "paired")
       """
-       module load kallisto sratoolkit fastqc
        fasterq-dump --split-files ${sequence.sra_run_id}
        fastqc -t 2 ${sequence.sra_run_id}_1.fastq ${sequence.sra_run_id}_2.fastq
        kallisto quant -i ref_index -o ./ ${sequence.sra_run_id}_1.fastq ${sequence.sra_run_id}_2.fastq
@@ -36,7 +38,6 @@ process SRA {
       """
     else if (sequence.layout == "single")
       """
-       module load kallisto sratoolkit fastqc
        fasterq-dump ${sequence.sra_run_id}
        fastqc ${sequence.sra_run_id}.fastq
        kallisto quant -i ref_index -o ./ --single -l ${sequence.fragment_length_average} -s ${sequence.fragment_length_sd} ${sequence.sra_run_id}.fastq
@@ -49,6 +50,9 @@ process SRA {
 process LocalPaired {
   publishDir "work/out/fastqc-reports", mode: 'move', pattern: '*_fastqc.zip'
   scratch params.scratch_dir
+  module 'kallisto'
+  module 'sratoolkit'
+  module 'fastqc'
 
   input:
     tuple val(pair_id), path(reads)
@@ -71,6 +75,9 @@ process LocalPaired {
 process LocalSingle {
   publishDir "work/out/fastqc-reports", mode: 'move', pattern: '*_fastqc.zip'
   scratch params.scratch_dir
+  module 'kallisto'
+  module 'sratoolkit'
+  module 'fastqc'
 
   input:
     path fastq_file 
@@ -82,7 +89,6 @@ process LocalSingle {
 
   script:
     """
-     module load kallisto sratoolkit fastqc
      gunzip -c ${fastq_file} > ${fastq_file.simpleName}.fastq
      fastqc ${fastq_file.simpleName}.fastq
      kallisto quant -i ref_index -o ./ --single -l ${params.local_reads_single_fraglength_mean} -s ${params.local_reads_single_fraglength_sd} ${fastq_file.simpleName}.fastq
@@ -92,13 +98,13 @@ process LocalSingle {
 
 process combineAll {
   publishDir "work/out/", mode: 'move'
+  module 'R'
 
   input:
     path "*" 
   output:
     path "combined_abundance.tsv"
     
-  module 'R/4.3.2'
 
   script:
   """

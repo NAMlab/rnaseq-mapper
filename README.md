@@ -7,7 +7,6 @@ The output is a combined table containing abundance quantifications as well as [
 ## Prerequisites
 rnaseq-mapper will try to load the following [modules](http://modules.sourceforge.net/): `sratoolkit`, `kallisto`, `R`, `fastqc`.
 If your system doesn't use modules, make sure the execs are available in your PATH.
-I'm currently working on a [Singularity](https://sylabs.io/) container that packages all the required software (see `singularity_container.def`).
 
 ## Usage
 1. Set up nextflow (if not installed already):
@@ -21,6 +20,11 @@ curl -s https://get.nextflow.io | bash
 ```
 ./nextflow run NAMlab/rnaseq-mapper
 ```
+
+### Singularity Container
+If you prefer, you can also make use of the [Singularity](https://sylabs.io/) container that packages all the required software.
+This requires Singularity or [Apptainer](https://apptainer.org/) to be installed in your system.
+You can then simply execute the pipeline (step 5 above, the other steps stay the same) via `./nextflow run NAMlab/rnaseq-mapper -with-singularity library://merlin/default/rnaseq-mapper:latest` or `./nextflow run NAMlab/rnaseq-mapper -with-apptainer library://merlin/default/rnaseq-mapper:latest` respectively.
 
 ## Output
 You will get out a TSV file with the combined kallisto outputs for all your sequence files like this one (by default in the `work/out` folder):
