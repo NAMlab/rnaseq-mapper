@@ -7,6 +7,9 @@ The output is a combined table containing abundance quantifications as well as [
 ## Prerequisites
 rnaseq-mapper will try to load the following [modules](http://modules.sourceforge.net/): `sratoolkit`, `kallisto`, `R`, `fastqc`.
 If your system doesn't use modules, make sure the execs are available in your PATH.
+If you have not yet used the `sratoolkit` before, you will also need to configure it.
+To do this, run `vdb-config --interactive`. 
+I recommend turning off *enable local file caching* in the *Cache* settings because this may keep downloaded sequence files on your disk even after the rnaseq-mapper deletes them which may cause your disk to run out of space if you process a lot of sequences.
 
 ## Usage
 1. Set up nextflow (if not installed already):
