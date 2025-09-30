@@ -53,3 +53,6 @@ You will get out a TSV file with the combined kallisto outputs for all your sequ
 | Solyc00g007330.1.1 | 516  | 356.999 | 0 | 0 | 345.082 | 0 | 0 | 317     | 0 | 0 | 
 
 You will also get [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) reports for each of sequence files in the same folder.
+
+## Misc
+- rnaseq-mapper will retry downloading and mapping sequences from NCBI up to 4 times, if that still fails (e.g. because the sequence entry is not available or something is wrong with it), it will skip that sequence and your output will not contain any abundance information for it. So I recommend checking which sequences were actually mapped when working with the combined abundance file instead of assuming it will contain all accessions from your input.

@@ -14,7 +14,7 @@ process indexReference {
 process SRA {
   publishDir "work/out/fastqc-reports", mode: 'move', pattern: '*_fastqc.zip'
   scratch params.scratch_dir
-  errorStrategy 'retry'
+  errorStrategy { task.attempt <= 4 ? 'retry' : 'ignore' }
   maxRetries 4
   maxForks params.max_sra_forks
   module 'kallisto'
