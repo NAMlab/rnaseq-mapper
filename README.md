@@ -56,3 +56,4 @@ You will also get [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fa
 
 ## Misc
 - rnaseq-mapper will retry downloading and mapping sequences from NCBI up to 4 times, if that still fails (e.g. because the sequence entry is not available or something is wrong with it), it will skip that sequence and your output will not contain any abundance information for it. So I recommend checking which sequences were actually mapped when working with the combined abundance file instead of assuming it will contain all accessions from your input.
+- if you map a lot of sequences (> 2000), the combineAll step which merges all the produced abundance files into one `combined_abundance.tsv` can get very slow. You can make sure the `data.table` package is available in the R environment so rnaseq-mapper can use the faster `fread` and `Reduce` functions.
